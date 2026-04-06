@@ -135,6 +135,51 @@ npm run write  # 自動修正（eslint --fix）
 
 ---
 
+## Biome と ESLint の併用について
+
+### 現在の構成での干渉リスク
+
+`eslint.config.js` にカスタムルールだけを登録している限り、Biome との衝突は発生しない。カスタムルールはこのプロジェクト固有のロジックであり、Biome に同等の実装が存在しないため、重複が起きる余地がない。
+
+```js
+// eslint.config.js — カスタムルールのみ。Biome と重複するものは何もない。
+export default [
+  {
+    rules: {
+      "local/require-tx-shadowing": "error"
+    }
+  }
+];
+```
+
+### 将来ルールを追加するときの注意点
+
+衝突が起きるのは、ESLint 側に既存の共有設定（`recommended` 系）を追加した場合に限られる。
+
+```js
+// この追加が衝突を引き起こす
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+
+export default [
+  js.configs.recommended,          // Biome がカバー済みのルールと重複する
+  ...tseslint.configs.recommended, // 同上
+  { rules: { "local/require-tx-shadowing": "error" } }
+];
+```
+
+### 指針
+
+```
+Biome で表現できる         → biome.json / Biome の設定で管理
+Biome で表現できない       → eslint-rules/ にカスタムルールとして追加
+ESLint の recommended 系  → 追加しない（Biome に任せる）
+```
+
+この線引きを守る限り、ESLint にカスタムルールをいくつ追加しても Biome との干渉は発生しない。
+
+---
+
 ## ファイル構成
 
 ```
